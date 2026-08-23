@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: stremio-subai
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /manifest.json
+    envVars:
+      - key: MODEL
+        value: auto
+      # GEMINI_API_KEYS: set thủ công trong Render Dashboard (secret, KHÔNG commit)
+      - key: GEMINI_API_KEYS
+        sync: false
