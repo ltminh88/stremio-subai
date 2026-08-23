@@ -9,6 +9,12 @@ const port = Number(process.env.PORT) || 7700;
 
 const app = express();
 
+// Log mọi request (chẩn đoán: xem Stremio có gọi /subtitles không)
+app.use((req, _res, next) => {
+  console.log(`[req] ${new Date().toISOString()} ${req.method} ${req.url}`);
+  next();
+});
+
 // CORS bắt buộc cho Stremio (route .vtt tự add vì không đi qua SDK router)
 app.use((_, res, next) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
