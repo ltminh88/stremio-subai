@@ -21,13 +21,15 @@ app.use((_, res, next) => {
   next();
 });
 
-// Route dịch: player tải file này khi user chọn track "Vietnamese".
-// Toàn bộ latency dịch nằm ở đây (deferred), có cache nên chỉ tốn 1 lần/phim.
-app.get("/sub/:type/:id/vi.vtt", async (req, res) => {
+// Route dịch: player tải file này khi user chọn 1 bản "Tiếng Việt".
+// Toàn bộ latency dịch nằm ở đây (deferred), cache theo bản sub gốc nên mỗi bản chỉ dịch 1 lần.
+async function serveVtt(req, res) {
   const { type, id } = req.params; // id đã được express giải mã (tt123:1:2)
+  const baseId = req.params.baseId || "auto"; // URL cũ (v1.0) không có baseId
   const extra = {
     videoHash: req.query.videoHash,
     videoSize: req.query.videoSize,
+    filename: req.query.filename,
   };
   try {
     const keys = getKeys();
@@ -35,7 +37,7 @@ app.get("/sub/:type/:id/vi.vtt", async (req, res) => {
       res.status(500).type("text/plain").send("Chưa cấu hình GEMINI_API_KEYS");
       return;
     }
-    const vtt = await getVietVtt(type, id, extra, keys, getModel());
+    const vtt = await getVietVtt(type, id, extra, keys, getModel(), baseId);
     if (!vtt) {
       // Không có sub gốc / dịch thất bại -> trả VTT rỗng hợp lệ (Stremio không lỗi)
       res.type("text/vtt").send("WEBVTT\n\n");
@@ -47,7 +49,9 @@ app.get("/sub/:type/:id/vi.vtt", async (req, res) => {
     console.error("VTT route error:", err.message);
     res.type("text/vtt").send("WEBVTT\n\n");
   }
-});
+}
+app.get("/sub/:type/:id/:baseId/vi.vtt", serveVtt);
+app.get("/sub/:type/:id/vi.vtt", serveVtt); // tương thích URL cũ Stremio còn cache
 
 // SDK router: /manifest.json + /subtitles/...
 app.use(getRouter(addonInterface));
