@@ -46,3 +46,35 @@ test("sub 25 fps (PAL) xếp sau sub 23.976 fps", () => {
   ];
   assert.equal(rankSubs(two, "Movie.1999.1080p.BluRay.x264-Y.mkv")[0].id, "film");
 });
+
+// Dữ liệu thật Interstellar (tt0816692): sub Anh chỉ có bản quay rạp/screener 25 fps
+const interstellar = [
+  { id: "en-ts", lang: "eng", m: "i", fpsMilli: 25000, subtitleFileName: "Interstellar.2014.TS.XViD.AC3.MrSeeN-SiMPLE.srt" },
+  { id: "en-scr", lang: "eng", m: "i", fpsMilli: 25000, subtitleFileName: "Interstellar.2014.DVDSCR.XviD-EVO.srt" },
+  { id: "hu-bd", lang: "hun", m: "i", fpsMilli: 23976, subtitleFileName: "Interstellar.2014.2014.1080p.BluRay.x264.YIFY.srt" },
+];
+
+test("sub Anh toàn bản quay rạp -> chọn bản BluRay thứ tiếng khác", () => {
+  assert.equal(rankSubs(interstellar, "Interstellar.2014.1080p.BluRay.x264-SPARKS.mkv")[0].id, "hu-bd");
+});
+
+test("cùng chất lượng thì tiếng Anh vẫn được ưu tiên", () => {
+  const two = [
+    { id: "hu", lang: "hun", m: "i", subtitleFileName: "Movie.2020.BluRay-AAA.srt" },
+    { id: "en", lang: "eng", m: "i", subtitleFileName: "Movie.2020.BluRay-AAA.srt" },
+  ];
+  assert.equal(rankSubs(two, "Movie.2020.1080p.BluRay-AAA.mkv")[0].id, "en");
+});
+
+test("screener DVDSCR xếp sau bản chính thức", () => {
+  assert.equal(sourceFamily("Interstellar.2014.DVDSCR.XviD-EVO.srt"), "screener");
+});
+
+test("sub chia đĩa CD1/CD2 và file không phải .srt bị xếp sau", () => {
+  const subs = [
+    { id: "cd1", lang: "eng", m: "i", fpsMilli: 23976, subtitleFileName: "Sixth Sense CD1.sub" },
+    { id: "part", lang: "eng", m: "i", subtitleFileName: "Movie.1999.Part.1.of.2.srt" },
+    { id: "full", lang: "eng", m: "i", subtitleFileName: "The Sixth Sense (ENG).srt" },
+  ];
+  assert.equal(rankSubs(subs, "The Sixth Sense 1999 BluRay 1080p x265-SM737.mkv")[0].id, "full");
+});
