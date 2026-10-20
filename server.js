@@ -3,6 +3,12 @@ import sdk from "stremio-addon-sdk";
 import addonInterface from "./addon.js";
 import { getVietVtt } from "./lib/translator.js";
 import { getKeys, getModel } from "./lib/config.js";
+import { waitWithDeadline } from "./lib/wait-with-deadline.js";
+
+// Stremio chỉ chờ ~10s khi tải phụ đề -> trả lời trước hạn đó
+const VTT_DEADLINE_MS = 9000;
+const PENDING_VTT =
+  "WEBVTT\n\n00:00:00.000 --> 10:00:00.000\n⏳ Đang dịch phụ đề tiếng Việt... chọn lại phụ đề này sau ~30 giây\n";
 
 const { getRouter } = sdk;
 const port = Number(process.env.PORT) || 7700;
@@ -37,7 +43,16 @@ async function serveVtt(req, res) {
       res.status(500).type("text/plain").send("Chưa cấu hình GEMINI_API_KEYS");
       return;
     }
-    const vtt = await getVietVtt(type, id, extra, keys, getModel(), baseId);
+    const job = getVietVtt(type, id, extra, keys, getModel(), baseId);
+    job.catch((err) => console.error("Dịch nền lỗi:", err.message)); // tránh unhandled rejection
+    const result = await waitWithDeadline(job, VTT_DEADLINE_MS);
+    if (!result.done) {
+      // Chưa dịch xong: báo trạng thái, KHÔNG cho cache để lần chọn lại tải bản thật
+      res.setHeader("Cache-Control", "no-store");
+      res.type("text/vtt").send(PENDING_VTT);
+      return;
+    }
+    const vtt = result.value;
     if (!vtt) {
       // Không có sub gốc / dịch thất bại -> trả VTT rỗng hợp lệ (Stremio không lỗi)
       res.type("text/vtt").send("WEBVTT\n\n");

@@ -1,6 +1,8 @@
 import sdk from "stremio-addon-sdk";
 import { getBaseUrl } from "./lib/config.js";
 import { listBaseSubs } from "./lib/sources/opensubtitles-base.js";
+import { getVietVtt } from "./lib/translator.js";
+import { getKeys, getModel } from "./lib/config.js";
 
 const { addonBuilder } = sdk;
 
@@ -36,6 +38,13 @@ builder.defineSubtitlesHandler(async ({ type, id, extra }) => {
   try {
     const subs = await listBaseSubs(type, id, extra || {});
     if (subs.length) baseIds = subs.slice(0, MAX_VARIANTS).map((s) => s.id);
+    // Dịch trước bản 1 (khớp nhất) ở nền: tới lúc mở menu phụ đề thường đã xong.
+    // Chỉ bản 1 để đỡ tốn quota; bản 2-3 dịch khi được bấm.
+    const keys = getKeys();
+    if (subs.length && keys.length)
+      getVietVtt(type, id, extra || {}, keys, getModel(), subs[0].id).catch((err) =>
+        console.warn("Dịch trước lỗi:", err.message)
+      );
   } catch (err) {
     console.warn("listBaseSubs lỗi, dùng auto:", err.message);
   }

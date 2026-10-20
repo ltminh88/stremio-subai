@@ -38,3 +38,11 @@ test("nhận diện nguồn và nhóm", () => {
   assert.equal(releaseGroup("x.X264-EVO-HI.srt"), "evo");
   assert.equal(releaseGroup(film), "lama");
 });
+
+test("sub 25 fps (PAL) xếp sau sub 23.976 fps", () => {
+  const two = [
+    { id: "pal", m: "i", fpsMilli: 25000, subtitleFileName: "Movie.1999.BluRay-X.srt" },
+    { id: "film", m: "i", fpsMilli: 23976, subtitleFileName: "Movie.1999.BluRay-X.srt" },
+  ];
+  assert.equal(rankSubs(two, "Movie.1999.1080p.BluRay.x264-Y.mkv")[0].id, "film");
+});
