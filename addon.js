@@ -8,7 +8,7 @@ const { addonBuilder } = sdk;
 
 const manifest = {
   id: "community.subai.vi",
-  version: "1.1.0",
+  version: "1.2.0",
   name: "SubAI Vietnamese (Gemini)",
   description:
     "Tự dịch phụ đề sang tiếng Việt bằng AI (Google Gemini). Lấy sub gốc từ OpenSubtitles v3, dịch on-the-fly. Tự dò model Gemini còn khả dụng (không hardcode) + xoay vòng nhiều API key.",
@@ -55,7 +55,7 @@ builder.defineSubtitlesHandler(async ({ type, id, extra }) => {
       url: `${base}/sub/${type}/${encId}/${encodeURIComponent(bid)}/vi.vtt${query}`,
       lang: "vie",
     })),
-    cacheMaxAge: 6 * 60 * 60,
+    cacheMaxAge: 60 * 60, // 1 giờ: đổi logic thì thiết bị cập nhật danh sách nhanh
   };
 });
 

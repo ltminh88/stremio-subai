@@ -46,8 +46,10 @@ async function serveVtt(req, res) {
     const job = getVietVtt(type, id, extra, keys, getModel(), baseId);
     job.catch((err) => console.error("Dịch nền lỗi:", err.message)); // tránh unhandled rejection
     const result = await waitWithDeadline(job, VTT_DEADLINE_MS);
+    const ua = (req.get("user-agent") || "?").slice(0, 80);
     if (!result.done) {
       // Chưa dịch xong: báo trạng thái, KHÔNG cho cache để lần chọn lại tải bản thật
+      console.log(`[vtt] ${baseId} -> CHỜ (placeholder) | ua=${ua}`);
       res.setHeader("Cache-Control", "no-store");
       res.type("text/vtt").send(PENDING_VTT);
       return;
@@ -58,6 +60,7 @@ async function serveVtt(req, res) {
       res.type("text/vtt").send("WEBVTT\n\n");
       return;
     }
+    console.log(`[vtt] ${baseId} -> BẢN THẬT ${vtt.length}B | ua=${ua}`);
     res.setHeader("Cache-Control", "public, max-age=86400");
     res.type("text/vtt").send(vtt);
   } catch (err) {
